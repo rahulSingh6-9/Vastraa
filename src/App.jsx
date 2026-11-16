@@ -1,9 +1,10 @@
 import { useLayoutEffect, useRef } from 'react'
-import { Route, Routes, useLocation, useNavigationType } from 'react-router-dom'
+import { Route, Routes, useLocation } from 'react-router-dom'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import SiteHeader from './components/SiteHeader.jsx'
 import SiteFooter from './components/SiteFooter.jsx'
+import ScrollRestoration from './components/ScrollRestoration.jsx'
 import HeroSection from './sections/HeroSection.jsx'
 import CategorySection from './sections/CategorySection.jsx'
 import FeaturedSection from './sections/FeaturedSection.jsx'
@@ -11,7 +12,6 @@ import CampaignFilmSection from './sections/CampaignFilmSection.jsx'
 import NewDropSection from './sections/NewDropSection.jsx'
 import EditorialStatsSection from './sections/EditorialStatsSection.jsx'
 import FashionGallerySection from './sections/FashionGallerySection.jsx'
-import EditorialSection from './sections/EditorialSection.jsx'
 import CollectionPage from './pages/CollectionPage.jsx'
 import ShopListing from './components/ShopListing.jsx'
 import CollectionsPage from './pages/CollectionsPage.jsx'
@@ -132,80 +132,6 @@ function useRouteReveals(pageRef, pathname) {
   }, [pageRef, pathname])
 }
 
-function scrollImmediately(action) {
-  const root = document.documentElement
-  const previousBehavior = root.style.scrollBehavior
-  root.style.scrollBehavior = 'auto'
-  try {
-    action()
-  } finally {
-    root.style.scrollBehavior = previousBehavior
-  }
-}
-
-function scrollToFragment(hash) {
-  if (!hash) return false
-
-  const target = document.getElementById(decodeURIComponent(hash.slice(1)))
-  if (!target) return false
-
-  scrollImmediately(() => target.scrollIntoView())
-  return true
-}
-
-function ScrollRestoration() {
-  const location = useLocation()
-  const navigationType = useNavigationType()
-  const positionsRef = useRef(new Map())
-  const currentKeyRef = useRef(location.key)
-  const previousLocationRef = useRef(location)
-  const isInitialNavigationRef = useRef(true)
-
-  useLayoutEffect(() => {
-    const previousRestoration = window.history.scrollRestoration
-    window.history.scrollRestoration = 'manual'
-    return () => {
-      window.history.scrollRestoration = previousRestoration
-    }
-  }, [])
-
-  useLayoutEffect(() => {
-    const savePosition = () => {
-      positionsRef.current.set(currentKeyRef.current, window.scrollY)
-    }
-
-    window.addEventListener('scroll', savePosition, { passive: true })
-    return () => window.removeEventListener('scroll', savePosition)
-  }, [])
-
-  useLayoutEffect(() => {
-    const previousLocation = previousLocationRef.current
-
-    if (isInitialNavigationRef.current) {
-      isInitialNavigationRef.current = false
-      positionsRef.current.set(location.key, window.scrollY)
-    } else if (navigationType === 'POP') {
-      const savedPosition = positionsRef.current.get(location.key)
-      if (savedPosition !== undefined) {
-        scrollImmediately(() => window.scrollTo(0, savedPosition))
-      } else if (!scrollToFragment(location.hash)) {
-        scrollImmediately(() => window.scrollTo(0, 0))
-      }
-    } else if (location.pathname !== previousLocation.pathname) {
-      if (!scrollToFragment(location.hash)) {
-        scrollImmediately(() => window.scrollTo(0, 0))
-      }
-    } else if (location.hash && location.hash !== previousLocation.hash) {
-      scrollToFragment(location.hash)
-    }
-
-    currentKeyRef.current = location.key
-    positionsRef.current.set(location.key, window.scrollY)
-    previousLocationRef.current = location
-  }, [location.hash, location.key, location.pathname, navigationType])
-
-  return null
-}
 
 function App() {
   const { pathname } = useLocation()
